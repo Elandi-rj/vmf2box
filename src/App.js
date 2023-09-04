@@ -41,7 +41,15 @@ function App() {
         }
       });
       if (boxCommands[0]) {
-        setButtonText(<div><p>Copy this text, put it in a config file e.g. box.cfg, bind a key to exec the cfg like bind r "exec box.cfg"</p><p>{boxCommands}</p></div>);
+        let stringBoxCommands = '';
+        boxCommands.forEach(box => {
+          let bx = box.props.children;
+          stringBoxCommands += `box ${bx[1]} ${bx[3]} ${bx[5]} ${bx[7]} ${bx[9]} ${bx[11]}\n`;;
+        });
+        let copyButton = <button onClick={() => { navigator.clipboard.writeText(stringBoxCommands); }}>Copy to clipboard</button>
+
+        setButtonText(<div><p>Copy this text, put it in a config file e.g. box.cfg, <br></br>bind a key to exec the cfg like bind r "exec box.cfg"<br></br><br></br>{copyButton}{boxCommands}</p></div>);
+
       }
       else {
         setButtonText(<div>nothing found ¯\_(ツ)_/¯</div>)
