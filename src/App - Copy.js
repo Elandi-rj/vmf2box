@@ -11,26 +11,17 @@ function parser(input, options) {
   return options.ast ? ast : (0, transformer_1.default)(ast);
 }
 let parsed;
-let boxCommands = [];
+let boxCommands = [0, 0];
 
 function App() {
   const [buttonText, setButtonText] = useState('');
-
-  function handleSubmit(e) {
-    // Prevent the browser from reloading the page
-    e.preventDefault();
-    // Read the form data
-    const form = e.target;
-    const formData = new FormData(form);
-    // Or you can work with it as a plain object:
-    const formJson = Object.fromEntries(formData.entries());
-    let type = formJson.myInput;
+  function handleClick() {
     try {
-      console.log(parsed);
-      let triggers = parsed["entity"].filter(o => o.classname === type)
+      let triggers = parsed["entity"].filter(o => o.classname === "trigger_teleport")
       boxCommands = [];
       console.log(triggers);
       triggers.forEach(trigger => {
+        //console.log(trigger)
         if (trigger.solid[0]) {
           trigger.solid.forEach(solid => {
             boxCommands.push(getBox(solid.side));
@@ -40,14 +31,9 @@ function App() {
           boxCommands.push(getBox(trigger.solid.side));
         }
       });
-      if (boxCommands[0]) {
-        setButtonText(<div><p>Copy this text, put it in a config file eg: box.cfg, bind a key to exec the cfg like bind r "exec box.cfg"</p><p>{boxCommands}</p></div>);
-      }
-      else {
-        setButtonText(<div>nothing found ¯\_(ツ)_/¯</div>)
-      }
+      console.log(boxCommands)
 
-
+      setButtonText(boxCommands);
     } catch (error) {
       console.log(error)
     }
@@ -56,21 +42,17 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <form method="post" onSubmit={handleSubmit}>
-          <label>
-            Entity type: <input name="myInput" defaultValue="trigger_teleport" />
-          </label>
-          <p id="examples">
-            examples: <br></br>
-            func_regenerate <br></br>
-            func_nogrenades <br></br>
-            trigger_teleport <br></br>
-          </p>
+        <label>
+          Type: <input name="myInput" defaultValue="trigger_teleport" />
+        </label>
+        <p>
           {DragDrop()}
-          <button type="submit">box</button>
-        </form>
+          <button onClick={handleClick}>convert</button>
+        </p>
         <text>
           {buttonText}
+          box -9344 -12416 1792 -8192 -10624 1920<br></br>
+          box -8192 3840 1536 -6912 4352 1537
         </text>
       </header>
     </div >
@@ -85,7 +67,7 @@ function string2array(string) {
   return deParenthesised.split(" ");
 }
 
-let getBox = (sides) => { //this function was written by an ai, i've no idea how it
+let getBox = (sides) => {
   let minX = Infinity;
   let minY = Infinity;
   let minZ = Infinity;
@@ -102,7 +84,7 @@ let getBox = (sides) => { //this function was written by an ai, i've no idea how
     maxY = Math.max(maxY, b);
     maxZ = Math.max(maxZ, c);
   }
-  return <div>box {minX} {minY} {minZ} {maxX} {maxY} {maxZ}</div>;
+  return <p>box {minX} {minY} {minZ} {maxX} {maxY} {maxZ}</p>;
 };
 
 
