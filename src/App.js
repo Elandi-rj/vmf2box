@@ -41,13 +41,11 @@ function App() {
         }
       });
       if (boxCommands[0]) {
-        setButtonText(<div><p>Copy this text, put it in a config file eg: box.cfg, bind a key to exec the cfg like bind r "exec box.cfg"</p><p>{boxCommands}</p></div>);
+        setButtonText(<div><p>Copy this text, put it in a config file e.g. box.cfg, bind a key to exec the cfg like bind r "exec box.cfg"</p><p>{boxCommands}</p></div>);
       }
       else {
         setButtonText(<div>nothing found ¯\_(ツ)_/¯</div>)
       }
-
-
     } catch (error) {
       console.log(error)
     }
