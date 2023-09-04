@@ -83,7 +83,7 @@ function string2array(string) {
   return deParenthesised.split(" ");
 }
 
-let getBox = (sides) => { //this function was written by an ai, i've no idea how it
+let getBox = (sides) => { //this function was written by an ai, i've no idea how it works
   let minX = Infinity;
   let minY = Infinity;
   let minZ = Infinity;
