@@ -11,21 +11,32 @@ function parser(input, options) {
   return options.ast ? ast : (0, transformer_1.default)(ast);
 }
 let parsed;
-let boxCommands = [];
-
+let boxCommandsList = [];
+let groups = [];
 function App() {
   const [buttonText, setButtonText] = useState('');
 
   function handleSubmit(e) {
-    // Prevent the browser from reloading the page
-    e.preventDefault();
-    // Read the form data
-    const form = e.target;
+    e.preventDefault(); // Prevent the browser from reloading the page
+    const form = e.target; // Read the form data
     const formData = new FormData(form);
-    // Or you can work with it as a plain object:
-    const formJson = Object.fromEntries(formData.entries());
+    const formJson = Object.fromEntries(formData.entries()); // Or you can work with it as a plain object:
     let type = formJson.myInput;
-    setButtonText(generateBoxes(parsed, type));
+    let triggers = [];
+    let groups = generateGroups(parsed, type);
+    let targets = [];
+    let disableList = [];
+    groups.forEach(group => {
+      group[1].forEach(trigger => {
+        let triggerCopy = trigger;
+        triggerCopy.target = group[0];
+        targets.push(trigger.target);
+        triggers.push(triggerCopy);
+      });
+    });
+
+    setButtonText(generateBoxes(triggers, disableList));
+    console.log(targets, disableList);
   }
   return (
     <div className="App">
@@ -53,30 +64,45 @@ function App() {
 
 const fileTypes = ["VMF"];
 
-function generateBoxes(parsedVMF, type) {
+function generateGroupChecklist(targets) {
+
+}
+
+function generateGroups(parsedVMF, type) {
   try {
-    console.log(parsedVMF);
     let triggers = parsedVMF["entity"].filter(o => o.classname === type)
-    boxCommands = [];
-    console.log(triggers);
+    groups = [];
     triggers.forEach(trigger => {
       if (trigger.solid[0]) {
-        trigger.solid.forEach(solid => {
-          boxCommands.push(getBox(solid.side));
-        });
+        groups.push([trigger.target, trigger.solid]);
       }
       else {
-        boxCommands.push(getBox(trigger.solid.side));
+        groups.push([trigger.target, [trigger.solid]]);
       }
     });
-    if (boxCommands[0]) {
+    return groups
+  } catch (error) {
+    console.log(error)
+  }
+}
+
+function generateBoxes(triggers, disableList) {
+  try {
+    console.log(triggers);
+    boxCommandsList = [];
+    triggers.forEach(trigger => {
+      if (!disableList.includes(trigger.target)) {
+        boxCommandsList.push(getBox(trigger.side));
+      }
+    });
+    if (boxCommandsList[0]) {
       let stringBoxCommands = '';
-      boxCommands.forEach(box => {
+      boxCommandsList.forEach(box => {
         let bx = box.props.children;
         stringBoxCommands += `box ${bx[1]} ${bx[3]} ${bx[5]} ${bx[7]} ${bx[9]} ${bx[11]}\n`;;
       });
       let copyButton = <button onClick={() => { navigator.clipboard.writeText(stringBoxCommands); }}>Copy to clipboard</button>
-      return <div><p>Copy this text, put it in a config file e.g. box.cfg, <br></br>bind a key to exec the cfg like bind r "exec box.cfg"<br></br><br></br>{copyButton}{boxCommands}</p></div>;
+      return <div><p>Copy this text, put it in a config file e.g. box.cfg, <br></br>bind a key to exec the cfg like bind r "exec box.cfg"<br></br><br></br>{copyButton}{boxCommandsList}</p></div>;
     }
     else {
       return <div>nothing found ¯\_(ツ)_/¯</div>;
@@ -112,8 +138,8 @@ let getBox = (sides) => { //this function was written by an ai, i've no idea how
   return <div>box {minX} {minY} {minZ} {maxX} {maxY} {maxZ}</div>;
 };
 
-
 function DragDrop() {
+  // eslint-disable-next-line
   const [file, setFile] = useState(null);
   const handleChange = (file) => {
     file.text().then(parsedVMF => {
