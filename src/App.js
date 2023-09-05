@@ -25,39 +25,7 @@ function App() {
     // Or you can work with it as a plain object:
     const formJson = Object.fromEntries(formData.entries());
     let type = formJson.myInput;
-    try {
-      console.log(parsed);
-      let triggers = parsed["entity"].filter(o => o.classname === type)
-      boxCommands = [];
-      console.log(triggers);
-      triggers.forEach(trigger => {
-        if (trigger.solid[0]) {
-          trigger.solid.forEach(solid => {
-            boxCommands.push(getBox(solid.side));
-          });
-        }
-        else {
-          boxCommands.push(getBox(trigger.solid.side));
-        }
-      });
-      if (boxCommands[0]) {
-        let stringBoxCommands = '';
-        boxCommands.forEach(box => {
-          let bx = box.props.children;
-          stringBoxCommands += `box ${bx[1]} ${bx[3]} ${bx[5]} ${bx[7]} ${bx[9]} ${bx[11]}\n`;;
-        });
-        let copyButton = <button onClick={() => { navigator.clipboard.writeText(stringBoxCommands); }}>Copy to clipboard</button>
-
-        setButtonText(<div><p>Copy this text, put it in a config file e.g. box.cfg, <br></br>bind a key to exec the cfg like bind r "exec box.cfg"<br></br><br></br>{copyButton}{boxCommands}</p></div>);
-
-      }
-      else {
-        setButtonText(<div>nothing found ¯\_(ツ)_/¯</div>)
-      }
-    } catch (error) {
-      console.log(error)
-    }
-
+    setButtonText(generateBoxes(parsed, type));
   }
   return (
     <div className="App">
@@ -84,6 +52,39 @@ function App() {
 }
 
 const fileTypes = ["VMF"];
+
+function generateBoxes(parsedVMF, type) {
+  try {
+    console.log(parsedVMF);
+    let triggers = parsedVMF["entity"].filter(o => o.classname === type)
+    boxCommands = [];
+    console.log(triggers);
+    triggers.forEach(trigger => {
+      if (trigger.solid[0]) {
+        trigger.solid.forEach(solid => {
+          boxCommands.push(getBox(solid.side));
+        });
+      }
+      else {
+        boxCommands.push(getBox(trigger.solid.side));
+      }
+    });
+    if (boxCommands[0]) {
+      let stringBoxCommands = '';
+      boxCommands.forEach(box => {
+        let bx = box.props.children;
+        stringBoxCommands += `box ${bx[1]} ${bx[3]} ${bx[5]} ${bx[7]} ${bx[9]} ${bx[11]}\n`;;
+      });
+      let copyButton = <button onClick={() => { navigator.clipboard.writeText(stringBoxCommands); }}>Copy to clipboard</button>
+      return <div><p>Copy this text, put it in a config file e.g. box.cfg, <br></br>bind a key to exec the cfg like bind r "exec box.cfg"<br></br><br></br>{copyButton}{boxCommands}</p></div>;
+    }
+    else {
+      return <div>nothing found ¯\_(ツ)_/¯</div>;
+    }
+  } catch (error) {
+    console.log(error)
+  }
+}
 
 function string2array(string) {
   const regex = /[()]/g;
