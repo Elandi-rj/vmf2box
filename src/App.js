@@ -99,9 +99,9 @@ function App() {
           });
         });
       }
+      //<button onClick={Unchecked}>Uncheck all</button>
+      //<button onClick={Checked}>Check all</button> //these should be in allButtons
       let allButtons = <div>
-        <button onClick={Unchecked}>Uncheck all</button>
-        <button onClick={Checked}>Check all</button>
         {generateGroupCheckList(targets, triggers, disabledList)}
       </div>
       let generatedBoxes = generateBoxes(triggers, disabledList);
