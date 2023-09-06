@@ -1,22 +1,8 @@
-.App {
-  text-align: left;
-}
-
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
 .App-header {
   background-color: #282c34;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
   color: white;
 }
 
@@ -32,4 +18,18 @@ p {
   font-size: 16px;
   color: #4c5363;
   text-align: left;
+}
+
+button {
+  margin-top: 20px
+}
+
+input {
+  font-size: 16px;
+  margin: 0px;
+}
+
+label {
+  font-size: 16px;
+  margin: 0px;
 }

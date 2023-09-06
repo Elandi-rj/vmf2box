@@ -1,5 +1,5 @@
 import './App.css';
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { FileUploader } from "react-drag-drop-files";
 var tokenizer_1 = require("./tokenizer");
 var parser_1 = require("./parser");
@@ -13,50 +13,131 @@ function parser(input, options) {
 let parsed;
 let boxCommandsList = [];
 let groups = [];
+let disabledList = [];
+let checkAll = [];
 function App() {
-  const [buttonText, setButtonText] = useState('');
+  const [boxLists, setBoxList] = useState('');
+  const [checkLists, setCheckLists] = useState([]);
+  const [disabled, setDisabled] = useState(false);
+  const ref = useRef([]);
+  const Unchecked = () => {
+    try {
+      for (let i = 0; i < ref.current.length; i++) {
+        ref.current[i].checked = false;
+      }
+      setBoxList([]);
 
+    } catch (error) { }
+  }
+  const Checked = () => {
+    try {
+      for (let i = 0; i < ref.current.length; i++) {
+        ref.current[i].checked = true;
+      }
+      setBoxList(checkAll);
+    } catch (error) { }
+  }
+  function generateGroupCheckList(targets, triggers, disabledList) {
+    let groupCheckList = [];
+    targets.forEach((target, index) => {
+      if (target.target) {
+        var checkList = <input class="form-check-input" type="checkbox" value={target.target} id="flexCheckIndeterminate" GroupId={target.id} name={target.target} ref={(element) => { ref.current[index] = element }}
+          onChange={(event) => {
+            if (event.target.checked) {
+              let newDisabled = disabledList.filter(list => list !== target.id);
+              disabledList = newDisabled;
+            }
+            else {
+              disabledList.push(target.id);
+            }
+            let generatedBoxes = generateBoxes(triggers, disabledList);
+            setBoxList(generatedBoxes);
+            checkAll = generatedBoxes;
+          }} defaultChecked />;
+        let label = <label class="form-check-label" for="flexCheckIndeterminate">{target.target}</label>;
+        let formCheckinput = <div class="form-check">{checkList} {label}</div>
+        groupCheckList.push(formCheckinput);
+      }
+    });
+    return groupCheckList;
+  }
+  function DragDrop() {
+    // eslint-disable-next-line
+    const [file, setFile] = useState(null);
+    const handleChange = (file) => {
+      file.text().then(parsedVMF => {
+        parsed = parser(parsedVMF);
+        setDisabled(false);
+      })
+      setFile(file);
+    };
+    return (
+      <FileUploader handleChange={handleChange} name="file" types={fileTypes} />
+    );
+  }
   function handleSubmit(e) {
     e.preventDefault(); // Prevent the browser from reloading the page
     const form = e.target; // Read the form data
     const formData = new FormData(form);
     const formJson = Object.fromEntries(formData.entries()); // Or you can work with it as a plain object:
     let type = formJson.myInput;
-    let triggers = [];
-    let groups = generateGroups(parsed, type);
-    let targets = [];
-    let disableList = [];
-    groups.forEach(group => {
-      group[1].forEach(trigger => {
-        let triggerCopy = trigger;
-        triggerCopy.target = group[0];
-        targets.push(trigger.target);
-        triggers.push(triggerCopy);
-      });
-    });
 
-    setButtonText(generateBoxes(triggers, disableList));
-    console.log(targets, disableList);
+    disabledList = [];
+    boxCommandsList = [];
+    if (boxCommandsList) {
+      let triggers = [];
+      groups = generateGroups(parsed, type);
+      let targets = [];
+      if (groups) {
+        groups.forEach(group => {
+          targets.push({ target: group[0], id: group[2] });
+          group[1].forEach(trigger => {
+            let triggerCopy = trigger;
+            triggerCopy.target = group[0];
+            triggerCopy.id = group[2];
+            triggers.push(triggerCopy);
+          });
+        });
+      }
+      let allButtons = <div>
+        <button onClick={Unchecked}>Uncheck all</button>
+        <button onClick={Checked}>Check all</button>
+        {generateGroupCheckList(targets, triggers, disabledList)}
+      </div>
+      let generatedBoxes = generateBoxes(triggers, disabledList);
+      setBoxList(generatedBoxes);
+      checkAll = generatedBoxes;
+      setCheckLists(allButtons);
+      if (parsed) { setDisabled(true); }
+    }
   }
   return (
     <div className="App">
       <header className="App-header">
-        <form method="post" onSubmit={handleSubmit}>
-          <label>
-            Entity type: <input name="myInput" defaultValue="trigger_teleport" />
-          </label>
-          <p id="examples">
-            examples: <br></br>
-            func_regenerate <br></br>
-            func_nogrenades <br></br>
-            trigger_teleport <br></br>
-          </p>
-          {DragDrop()}
-          <button type="submit">box</button>
-        </form>
-        <text>
-          {buttonText}
-        </text>
+        <div class='container mt-5'>
+          <div class="row">
+            <div class="col-sm">
+              <form method="post" onSubmit={handleSubmit}>
+                <div class="form-group">
+                  <label for="exampleInputEmail1">Entity type</label>
+                  <input name="myInput" defaultValue="trigger_teleport" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="trigger_teleport" />
+                </div>
+                <p id="examples">
+                  examples: <br></br>
+                  func_regenerate <br></br>
+                  func_nogrenades <br></br>
+                  trigger_teleport <br></br>
+                </p>
+                {DragDrop()}
+                <button class="btn btn-primary mb-3" type="submit" disabled={disabled}>box</button>
+              </form>
+              {boxLists}
+            </div>
+            <div class="col-sm">
+              {checkLists}
+            </div>
+          </div>
+        </div>
       </header>
     </div >
   );
@@ -64,20 +145,22 @@ function App() {
 
 const fileTypes = ["VMF"];
 
-function generateGroupChecklist(targets) {
-
-}
-
 function generateGroups(parsedVMF, type) {
+  let triggers
   try {
-    let triggers = parsedVMF["entity"].filter(o => o.classname === type)
+    if (type) {
+      triggers = parsedVMF["entity"].filter(o => o.classname === type)
+    }
+    else {
+      triggers = parsedVMF["entity"].filter(o => o.classname === "trigger_teleport")
+    }
     groups = [];
     triggers.forEach(trigger => {
       if (trigger.solid[0]) {
-        groups.push([trigger.target, trigger.solid]);
+        groups.push([trigger.target, trigger.solid, trigger.id]);
       }
       else {
-        groups.push([trigger.target, [trigger.solid]]);
+        groups.push([trigger.target, [trigger.solid], trigger.id]);
       }
     });
     return groups
@@ -88,10 +171,9 @@ function generateGroups(parsedVMF, type) {
 
 function generateBoxes(triggers, disableList) {
   try {
-    console.log(triggers);
     boxCommandsList = [];
     triggers.forEach(trigger => {
-      if (!disableList.includes(trigger.target)) {
+      if (!disableList.includes(trigger.id)) {
         boxCommandsList.push(getBox(trigger.side));
       }
     });
@@ -101,8 +183,8 @@ function generateBoxes(triggers, disableList) {
         let bx = box.props.children;
         stringBoxCommands += `box ${bx[1]} ${bx[3]} ${bx[5]} ${bx[7]} ${bx[9]} ${bx[11]}\n`;;
       });
-      let copyButton = <button onClick={() => { navigator.clipboard.writeText(stringBoxCommands); }}>Copy to clipboard</button>
-      return <div><p>Copy this text, put it in a config file e.g. box.cfg, <br></br>bind a key to exec the cfg like bind r "exec box.cfg"<br></br><br></br>{copyButton}{boxCommandsList}</p></div>;
+      let copyButton = <button class="btn btn-outline-primary mb-2" onClick={() => { navigator.clipboard.writeText(stringBoxCommands); }}>Copy to clipboard</button>
+      return <div><p>Copy this text, put it in a config file e.g. box.cfg, <br></br>bind a key to exec the cfg like bind r "exec box.cfg"<br></br>{copyButton}{boxCommandsList}</p></div>;
     }
     else {
       return <div>nothing found ¯\_(ツ)_/¯</div>;
@@ -138,17 +220,5 @@ let getBox = (sides) => { //this function was written by an ai, i've no idea how
   return <div>box {minX} {minY} {minZ} {maxX} {maxY} {maxZ}</div>;
 };
 
-function DragDrop() {
-  // eslint-disable-next-line
-  const [file, setFile] = useState(null);
-  const handleChange = (file) => {
-    file.text().then(parsedVMF => {
-      parsed = parser(parsedVMF);
-    })
-    setFile(file);
-  };
-  return (
-    <FileUploader handleChange={handleChange} name="file" types={fileTypes} />
-  );
-}
+
 export default App;
