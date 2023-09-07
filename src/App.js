@@ -14,34 +14,52 @@ let parsed;
 let boxCommandsList = [];
 let groups = [];
 let disabledList = [];
-let checkAll = [];
 function App() {
   const [boxLists, setBoxList] = useState('');
   const [checkLists, setCheckLists] = useState([]);
-  const [disabled, setDisabled] = useState(false);
   const ref = useRef([]);
-  const Unchecked = () => {
+
+  function refreshChecks(triggers, newDisabled, targets) {
+    let allButtons =
+      <div>
+        <button class="btn btn-outline-primary m-1" onClick={() => Unchecked(triggers, targets)}>Uncheck all</button>
+        <button class="btn btn-outline-primary m-1" onClick={() => Checked(triggers, targets)}>Check all</button>
+        {generateGroupCheckList(targets, triggers, newDisabled)}
+      </div>;
+    if (targets[0]) {
+      if (targets[0].target) { setCheckLists(allButtons); }
+    }
+    else { setCheckLists([]); }
+    setBoxList(generateBoxes(triggers, newDisabled));
+  }
+  const Unchecked = (triggers, targets) => {
     try {
       for (let i = 0; i < ref.current.length; i++) {
         ref.current[i].checked = false;
       }
-      setBoxList([]);
-
+      let newDisabled = [];
+      targets.forEach(target => {
+        newDisabled.push(target.id);
+      })
+      disabledList = newDisabled;
+      refreshChecks(triggers, newDisabled, targets);
     } catch (error) { }
   }
-  const Checked = () => {
+  const Checked = (triggers, targets) => {
     try {
       for (let i = 0; i < ref.current.length; i++) {
         ref.current[i].checked = true;
       }
-      setBoxList(checkAll);
+      let newDisabled = [];
+      disabledList = newDisabled;
+      refreshChecks(triggers, newDisabled, targets);
     } catch (error) { }
   }
   function generateGroupCheckList(targets, triggers, disabledList) {
     let groupCheckList = [];
     targets.forEach((target, index) => {
       if (target.target) {
-        var checkList = <input class="form-check-input" type="checkbox" value={target.target} id="flexCheckIndeterminate" GroupId={target.id} name={target.target} ref={(element) => { ref.current[index] = element }}
+        var checkList = <input class="form-check-input" type="checkbox" value={target.id} id={target.id} GroupId={target.id} name={target.id} ref={(element) => { ref.current[index] = element }}
           onChange={(event) => {
             if (event.target.checked) {
               let newDisabled = disabledList.filter(list => list !== target.id);
@@ -50,11 +68,9 @@ function App() {
             else {
               disabledList.push(target.id);
             }
-            let generatedBoxes = generateBoxes(triggers, disabledList);
-            setBoxList(generatedBoxes);
-            checkAll = generatedBoxes;
+            setBoxList(generateBoxes(triggers, disabledList));
           }} defaultChecked />;
-        let label = <label class="form-check-label" for="flexCheckIndeterminate">{target.target}</label>;
+        let label = <label class="form-check-label" for={target.id}>{target.target}</label>;
         let formCheckinput = <div class="form-check">{checkList} {label}</div>
         groupCheckList.push(formCheckinput);
       }
@@ -67,7 +83,6 @@ function App() {
     const handleChange = (file) => {
       file.text().then(parsedVMF => {
         parsed = parser(parsedVMF);
-        setDisabled(false);
       })
       setFile(file);
     };
@@ -99,16 +114,7 @@ function App() {
           });
         });
       }
-      //<button onClick={Unchecked}>Uncheck all</button>
-      //<button onClick={Checked}>Check all</button> //these should be in allButtons
-      let allButtons = <div>
-        {generateGroupCheckList(targets, triggers, disabledList)}
-      </div>
-      let generatedBoxes = generateBoxes(triggers, disabledList);
-      setBoxList(generatedBoxes);
-      checkAll = generatedBoxes;
-      setCheckLists(allButtons);
-      if (parsed) { setDisabled(true); }
+      refreshChecks(triggers, disabledList, targets);
     }
   }
   return (
@@ -129,7 +135,7 @@ function App() {
                   trigger_teleport <br></br>
                 </p>
                 {DragDrop()}
-                <button class="btn btn-primary mb-3" type="submit" disabled={disabled}>box</button>
+                <button class="btn btn-primary mb-3 mt-3" type="submit" onClick={Checked}>box</button>
               </form>
               {boxLists}
             </div>
@@ -183,7 +189,7 @@ function generateBoxes(triggers, disableList) {
         let bx = box.props.children;
         stringBoxCommands += `box ${bx[1]} ${bx[3]} ${bx[5]} ${bx[7]} ${bx[9]} ${bx[11]}\n`;;
       });
-      let copyButton = <button class="btn btn-outline-primary mb-2" onClick={() => { navigator.clipboard.writeText(stringBoxCommands); }}>Copy to clipboard</button>
+      let copyButton = <button class="btn btn-outline-primary mb-3 mt-3" onClick={() => { navigator.clipboard.writeText(stringBoxCommands); }}>Copy to clipboard</button>
       return <div><p>Copy this text, put it in a config file e.g. box.cfg, <br></br>bind a key to exec the cfg like bind r "exec box.cfg"<br></br>{copyButton}{boxCommandsList}</p></div>;
     }
     else {
