@@ -35,7 +35,9 @@ function App() {
   const Unchecked = (triggers, targets) => {
     try {
       for (let i = 0; i < ref.current.length; i++) {
-        ref.current[i].checked = false;
+        try {
+          ref.current[i].checked = false;
+        } catch (error) { }
       }
       let newDisabled = [];
       targets.forEach(target => {
@@ -43,20 +45,23 @@ function App() {
       })
       disabledList = newDisabled;
       refreshChecks(triggers, newDisabled, targets);
-    } catch (error) { }
+    } catch (error) { console.log(error) }
   }
   const Checked = (triggers, targets) => {
     try {
       for (let i = 0; i < ref.current.length; i++) {
-        ref.current[i].checked = true;
+        try {
+          ref.current[i].checked = true;
+        } catch (error) { }
       }
       let newDisabled = [];
       disabledList = newDisabled;
       refreshChecks(triggers, newDisabled, targets);
-    } catch (error) { }
+    } catch (error) { console.log(error) }
   }
   function generateGroupCheckList(targets, triggers, disabledList) {
     let groupCheckList = [];
+    targets = sortNumbersAndStrings(targets);
     targets.forEach((target, index) => {
       if (target.target) {
         var checkList = <input class="form-check-input" type="checkbox" value={target.id} id={target.id} GroupId={target.id} name={target.id} ref={(element) => { ref.current[index] = element }}
@@ -96,9 +101,6 @@ function App() {
     const formData = new FormData(form);
     const formJson = Object.fromEntries(formData.entries()); // Or you can work with it as a plain object:
     let type = formJson.myInput;
-
-    disabledList = [];
-    boxCommandsList = [];
     if (boxCommandsList) {
       let triggers = [];
       groups = generateGroups(parsed, type);
@@ -170,9 +172,7 @@ function generateGroups(parsedVMF, type) {
       }
     });
     return groups
-  } catch (error) {
-    console.log(error)
-  }
+  } catch (error) { console.log(error) }
 }
 
 function generateBoxes(triggers, disableList) {
@@ -195,15 +195,24 @@ function generateBoxes(triggers, disableList) {
     else {
       return <div>nothing found ¯\_(ツ)_/¯</div>;
     }
-  } catch (error) {
-    console.log(error)
-  }
+  } catch (error) { console.log(error) }
 }
 
 function string2array(string) {
   const regex = /[()]/g;
   let deParenthesised = string.replace(regex, "");
   return deParenthesised.split(" ");
+}
+
+function sortNumbersAndStrings(data) {
+  function checkString(string) {
+    return /^[0-9]*$/.test(string);
+  }
+  const numbers = data.filter((item) => checkString(item.target));
+  const strings = data.filter((item) => !checkString(item.target));
+  numbers.sort((a, b) => a.target - b.target);
+  strings.sort((a, b) => (a.target > b.target) ? 1 : ((b.target > a.target) ? -1 : 0));
+  return [...strings, ...numbers];
 }
 
 let getBox = (sides) => { //this function was written by an ai, i've no idea how it works
