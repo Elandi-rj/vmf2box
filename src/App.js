@@ -17,6 +17,7 @@ let disabledList = [];
 function App() {
   const [boxLists, setBoxList] = useState('');
   const [checkLists, setCheckLists] = useState([]);
+  const [mapName, setMapName] = useState('');
   const ref = useRef([]);
 
   function refreshChecks(triggers, newDisabled, targets) {
@@ -88,6 +89,7 @@ function App() {
     const handleChange = (file) => {
       file.text().then(parsedVMF => {
         parsed = parser(parsedVMF);
+        setMapName(file.name);
       })
       setFile(file);
     };
@@ -109,10 +111,12 @@ function App() {
         groups.forEach(group => {
           targets.push({ target: group[0], id: group[2] });
           group[1].forEach(trigger => {
-            let triggerCopy = trigger;
-            triggerCopy.target = group[0];
-            triggerCopy.id = group[2];
-            triggers.push(triggerCopy);
+            try {
+              let triggerCopy = trigger;
+              triggerCopy.target = group[0];
+              triggerCopy.id = group[2];
+              triggers.push(triggerCopy);
+            } catch (error) { console.log(error) }
           });
         });
       }
@@ -136,7 +140,8 @@ function App() {
                   func_nogrenades <br></br>
                   trigger_teleport <br></br>
                 </p>
-                {DragDrop()}
+                <div>{mapName}{DragDrop()}</div>
+
                 <button class="btn btn-primary mb-3 mt-3" type="submit" onClick={Checked}>box</button>
               </form>
               {boxLists}
